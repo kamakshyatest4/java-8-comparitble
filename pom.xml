@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.example</groupId>
+  <artifactId>java18-only-preview-demo</artifactId>
+  <version>1.0.0</version>
+  <name>Java 18 Only Build (Maven 3.9.4)</name>
+  <description>Build succeeds only with Java 18 (18.0.*) and Maven 3.9.4; fails with Java 17 and Java 21.</description>
+
+  <properties>
+    <!-- Compile against Java 18 APIs -->
+    <maven.compiler.release>18</maven.compiler.release>
+    <maven.compiler.parameters>true</maven.compiler.parameters>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
+    <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
+    <junit.jupiter.version>5.10.2</junit.jupiter.version>
+  </properties>
+
+  <build>
+    <plugins>
+      <!-- Enforce EXACT Maven version 3.9.4 and Java version range [18,19) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.4.1</version>
+        <executions>
+          <execution>
+            <id>enforce-versions</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <!-- Require exactly 3.9.4 -->
+                  <version>[3.9.4,3.9.8]</version>
+                  <message>This project requires Maven 3.9.4 exactly.</message>
+                </requireMavenVersion>
+                <requireJavaVersion>
+                  <!-- Allow only Java 18 (any update), not 17 or 21 -->
+                  <version>[18,19)</version>
+                  <message>This project requires Java 18 (18.0.*). Java 17/21 are not supported.</message>
+                </requireJavaVersion>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Compile with Java 18 and enable preview features that existed in JDK 18.
+           This makes compilation fail under JDK 21 because preview features are only
+           supported for the current release. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven.compiler.plugin.version}</version>
+        <configuration>
+          <release>${maven.compiler.release}</release>
+          <compilerArgs>
+            <arg>--enable-preview</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+
+      <!-- Run tests with preview enabled so JDK 18 can execute compiled classes -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven.surefire.plugin.version}</version>
+        <configuration>
+          <argLine>--enable-preview</argLine>
+          <useModulePath>false</useModulePath>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+</project>
